@@ -1,0 +1,796 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vaibhav Laxmi Provision Store</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f5f9;color:#202938}
+header{background:#123b32;color:white;padding:20px 12px;text-align:center}
+header h1{font-size:23px;margin:0}
+header p{margin:7px 0 0;color:#d5eee5}
+nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}
+nav button{white-space:nowrap;border:0;border-radius:8px;background:#e8eee9;padding:11px 13px;font-weight:bold}
+nav button.active{background:#16734e;color:white}
+main{max-width:1150px;margin:auto;padding:14px}
+.page{display:none}.page.active{display:block}
+.card,.stat{background:white;border-radius:12px;padding:15px;margin:12px 0;box-shadow:0 2px 8px #0000000b}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.stat small{color:#667085}.stat strong{display:block;font-size:23px;margin-top:8px}
+h2{margin:8px 0 14px}h3{margin:5px 0 12px}
+input,select{width:100%;padding:11px;border:1px solid #ccd5df;border-radius:7px;margin:6px 0 12px;font-size:15px;background:white}
+label{font-size:14px;font-weight:bold}
+button{cursor:pointer}
+.btn{border:0;border-radius:7px;padding:10px 13px;background:#176b4a;color:white;font-weight:bold;margin:3px}
+.btn.blue{background:#245bdb}.btn.red{background:#d93645}.btn.gray{background:#64748b}.btn.orange{background:#d88719}
+.btn.small{font-size:12px;padding:7px 9px}
+.product-card{border:1px solid #dce5df;border-radius:10px;padding:12px;background:white}
+.product-card h3{margin:2px 0 8px}
+.muted{font-size:13px;color:#667085}
+.hidden{display:none!important}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:650px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #e5e7eb;font-size:13px}
+th{background:#edf3ef}
+.cart-line{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #eee;padding:12px 0}
+.qty{display:flex;align-items:center;gap:5px}
+.qty button{border:0;border-radius:5px;padding:7px 11px;background:#e4eee8}
+.qty input{width:48px;margin:0;text-align:center;padding:6px}
+.notice{background:#fff6dd;padding:11px;border-radius:8px;font-size:13px;color:#775800;margin:10px 0}
+.alert{background:#fff0f0;border-left:4px solid #d93645;padding:12px;border-radius:8px;margin:10px 0}
+.success{background:#e9f8ef;border-left:4px solid #16834e;padding:12px;border-radius:8px;margin:10px 0}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:10;align-items:center;justify-content:center;padding:12px}
+.modal.show{display:flex}
+.modal-box{background:white;padding:18px;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow:auto}
+footer{text-align:center;padding:25px;color:#667085;font-size:12px}
+@media(max-width:600px){.row{grid-template-columns:1fr}header h1{font-size:19px}.cart-line{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>VAIBHAV LAXMI PROVISION STORE</h1>
+<p>Grocery Shop Management System</p>
+</header>
+
+<nav>
+<button class="active" onclick="showPage('dashboard',this)">Dashboard</button>
+<button onclick="showPage('quick',this)">Quick Sale</button>
+<button onclick="showPage('sales',this)">Sales</button>
+<button onclick="showPage('credits',this)">Credit Records</button>
+<button onclick="showPage('products',this)">Products</button>
+<button onclick="showPage('purchases',this)">Purchases</button>
+<button onclick="showPage('expenses',this)">Expenses</button>
+<button onclick="showPage('reports',this)">Reports</button>
+<button onclick="showPage('backup',this)">Backup</button>
+</nav>
+
+<main>
+
+<section id="dashboard" class="page active">
+<h2>Dashboard</h2>
+<div class="grid">
+<div class="stat"><small>Today's Sales</small><strong id="todaySales">₹0</strong></div>
+<div class="stat"><small>Total Sales</small><strong id="totalSales">₹0</strong></div>
+<div class="stat"><small>Today's Profit</small><strong id="todayProfit">₹0</strong></div>
+<div class="stat"><small>Total Products</small><strong id="productCount">0</strong></div>
+<div class="stat"><small>Low Stock</small><strong id="lowCount">0</strong></div>
+<div class="stat"><small>Pending Credit</small><strong id="dashPending">₹0</strong></div>
+<div class="stat"><small>Overdue Credit</small><strong id="dashOverdue">₹0</strong></div>
+</div>
+<div class="card">
+<h3>Credit Payment Alerts</h3>
+<div id="creditSummary">No pending credit.</div>
+</div>
+<div class="card"><h3>Low Stock Products</h3><div id="lowStockList">No low stock.</div></div>
+<div class="card"><h3>Recent Sales</h3><div class="table-wrap" id="recentSales"></div></div>
+</section>
+
+<section id="quick" class="page">
+<h2>Quick Sale</h2>
+<div class="card">
+<label>Search Product</label>
+<input id="saleSearch" placeholder="Search product..." oninput="renderSaleProducts()">
+<div id="saleProducts" class="grid"></div>
+</div>
+
+<div class="card">
+<h3>Shopping Cart</h3>
+<div id="cartItems">Cart is empty.</div>
+<hr>
+<h2>Total: <span id="cartTotal">₹0.00</span></h2>
+
+<label>Payment Method</label>
+<select id="payment" onchange="toggleCredit()">
+<option>Cash</option>
+<option>UPI</option>
+<option>Credit</option>
+</select>
+
+<div id="creditBox" class="hidden">
+<div class="notice">Credit Payment ke liye teeno customer details bharna zaroori hai.</div>
+<label>Customer Name *</label>
+<input id="customerName" placeholder="Enter customer name">
+
+<label>Mobile Number *</label>
+<input id="customerMobile" type="tel" inputmode="numeric" placeholder="Enter mobile number">
+
+<label>Address *</label>
+<input id="customerAddress" placeholder="Enter customer address">
+</div>
+
+<div id="optionalCustomerBox">
+<div class="muted">Cash / UPI ke liye customer details optional hain.</div>
+<label>Customer Name (Optional)</label>
+<input id="optionalCustomerName" placeholder="Customer name">
+<label>Mobile Number (Optional)</label>
+<input id="optionalCustomerMobile" type="tel" placeholder="Mobile number">
+<label>Address (Optional)</label>
+<input id="optionalCustomerAddress" placeholder="Address">
+</div>
+
+<button class="btn" onclick="completeSale()">Confirm Sale</button>
+<button class="btn gray" onclick="clearCart()">Clear Cart</button>
+</div>
+</section>
+
+<section id="sales" class="page">
+<h2>Sales Records</h2>
+<div class="card">
+<div class="row">
+<div><label>From Date</label><input type="date" id="salesFrom"></div>
+<div><label>To Date</label><input type="date" id="salesTo"></div>
+</div>
+<label>Search</label>
+<input id="salesSearch" placeholder="Product / customer / bill" oninput="renderSales()">
+<button class="btn" onclick="renderSales()">Search</button>
+<button class="btn gray" onclick="clearSalesFilter()">Clear</button>
+<div class="table-wrap" id="salesTable"></div>
+</div>
+</section>
+
+<section id="credits" class="page">
+<h2>Credit Records</h2>
+<div class="grid">
+<div class="stat"><small>Total Pending Credit</small><strong id="creditPendingTotal">₹0</strong></div>
+<div class="stat"><small>Overdue Credit</small><strong id="creditOverdueTotal">₹0</strong></div>
+<div class="stat"><small>Pending Bills</small><strong id="creditPendingCount">0</strong></div>
+<div class="stat"><small>Overdue Bills</small><strong id="creditOverdueCount">0</strong></div>
+</div>
+<div class="card">
+<h3>Pending / Overdue Payments</h3>
+<div class="notice">Sale ke 30 din baad bhi payment pending raha toh bill Overdue show hoga.</div>
+<div class="table-wrap" id="creditTable"></div>
+</div>
+</section>
+
+<section id="products" class="page">
+<h2>Product Management</h2>
+<div class="card">
+<h3>Add New Product</h3>
+<label>Product Name</label>
+<input id="pName" placeholder="Example: Sugar">
+<label>Product Type</label>
+<select id="pType" onchange="toggleProductType()">
+<option value="weight">Weight Product</option>
+<option value="piece">Piece Product</option>
+</select>
+<div id="weightFields">
+<div class="row">
+<div><label>Purchase Cost per KG (₹)</label><input id="pCostKg" type="number" min="0" step=".01"></div>
+<div><label>Selling Price per KG (₹)</label><input id="pPriceKg" type="number" min="0" step=".01"></div>
+</div>
+<h3>Separate Pack Prices (Optional)</h3>
+<div class="notice">Agar yahan price bharoge toh us pack ke liye wahi price lagega. Blank chhodne par per-kg automatic price lagega.</div>
+<div class="row">
+<div><label>250g Price</label><input id="p250" type="number" min="0" step=".01"></div>
+<div><label>500g Price</label><input id="p500" type="number" min="0" step=".01"></div>
+</div>
+<label>1kg Price</label>
+<input id="p1000" type="number" min="0" step=".01">
+<label>Opening Stock (KG)</label>
+<input id="pStockKg" type="number" min="0" step=".001">
+</div>
+<div id="pieceFields" class="hidden">
+<div class="row">
+<div><label>Purchase Cost per Piece</label><input id="pCost" type="number" min="0" step=".01"></div>
+<div><label>Selling Price per Piece</label><input id="pPrice" type="number" min="0" step=".01"></div>
+</div>
+<label>Opening Stock (Pieces)</label>
+<input id="pStock" type="number" min="0" step="1">
+</div>
+<label>Low Stock Alert</label>
+<input id="pLow" type="number" min="0" step=".001" value="2">
+<button class="btn" onclick="addProduct()">Save Product</button>
+</div>
+<div class="card">
+<h3>Saved Products</h3>
+<input id="productSearch" placeholder="Search product..." oninput="renderProducts()">
+<div class="table-wrap" id="productTable"></div>
+</div>
+</section>
+
+<section id="purchases" class="page">
+<h2>Purchases / Stock Entry</h2>
+<div class="card">
+<label>Select Product</label>
+<select id="purchaseProduct" onchange="purchaseProductChanged()"></select>
+<div id="purchaseWeight">
+<label>Purchased Quantity</label>
+<div class="row">
+<input id="purchaseQty" type="number" min="0" step=".001" placeholder="Quantity">
+<select id="purchaseUnit"><option value="kg">KG</option><option value="g">Grams</option></select>
+</div>
+</div>
+<div id="purchasePiece" class="hidden">
+<label>Purchased Pieces</label>
+<input id="purchasePieces" type="number" min="1" step="1">
+</div>
+<label>Total Purchase Cost (₹)</label>
+<input id="purchaseCost" type="number" min="0" step=".01">
+<button class="btn" onclick="savePurchase()">Save Purchase</button>
+</div>
+<div class="card"><h3>Purchase History</h3><div class="table-wrap" id="purchaseTable"></div></div>
+</section>
+
+<section id="expenses" class="page">
+<h2>Expenses</h2>
+<div class="card">
+<label>Expense Name</label><input id="expenseName" placeholder="Rent, electricity, transport">
+<label>Amount</label><input id="expenseAmount" type="number" min="0" step=".01">
+<button class="btn" onclick="addExpense()">Save Expense</button>
+</div>
+<div class="card"><h3>Expense History</h3><div class="table-wrap" id="expenseTable"></div></div>
+</section>
+
+<section id="reports" class="page">
+<h2>Monthly Reports</h2>
+<div class="card">
+<label>Select Month</label>
+<input type="month" id="reportMonth" onchange="renderReports()">
+<div class="grid">
+<div class="stat"><small>Sales</small><strong id="rSales">₹0</strong></div>
+<div class="stat"><small>Product Cost</small><strong id="rCost">₹0</strong></div>
+<div class="stat"><small>Gross Profit</small><strong id="rGross">₹0</strong></div>
+<div class="stat"><small>Expenses</small><strong id="rExpense">₹0</strong></div>
+<div class="stat"><small>Net Profit</small><strong id="rNet">₹0</strong></div>
+</div>
+</div>
+</section>
+
+<section id="backup" class="page">
+<h2>Backup & Restore</h2>
+<div class="card">
+<h3>Download Backup</h3>
+<button class="btn" onclick="downloadBackup()">Download JSON Backup</button>
+</div>
+<div class="card">
+<h3>Restore Backup</h3>
+<input type="file" id="restoreFile" accept=".json">
+<button class="btn orange" onclick="restoreBackup()">Restore Data</button>
+</div>
+<div class="card">
+<h3>Export Sales</h3>
+<button class="btn" onclick="exportSales()">Download Sales CSV</button>
+</div>
+<div class="notice">Important: Data isi browser aur device mein save hota hai. Regular backup download karte rahein.</div>
+</section>
+
+</main>
+
+<footer>VAIBHAV LAXMI PROVISION STORE</footer>
+
+<div class="modal" id="editModal">
+<div class="modal-box">
+<h3>Edit Product</h3>
+<input type="hidden" id="editId">
+<label>Product Name</label><input id="editName">
+<label>Product Type</label>
+<select id="editType" onchange="toggleEditType()">
+<option value="weight">Weight Product</option><option value="piece">Piece Product</option>
+</select>
+<div id="editWeight">
+<label>Purchase Cost per KG</label><input id="editCostKg" type="number" min="0" step=".01">
+<label>Selling Price per KG</label><input id="editPriceKg" type="number" min="0" step=".01">
+<div class="row">
+<div><label>250g Price</label><input id="edit250" type="number" min="0" step=".01"></div>
+<div><label>500g Price</label><input id="edit500" type="number" min="0" step=".01"></div>
+</div>
+<label>1kg Price</label><input id="edit1000" type="number" min="0" step=".01">
+<label>Stock (KG)</label><input id="editStockKg" type="number" min="0" step=".001">
+<label>Low Stock (KG)</label><input id="editLowKg" type="number" min="0" step=".001">
+</div>
+<div id="editPiece" class="hidden">
+<label>Purchase Cost per Piece</label><input id="editCost" type="number" min="0" step=".01">
+<label>Selling Price per Piece</label><input id="editPrice" type="number" min="0" step=".01">
+<label>Stock (Pieces)</label><input id="editStock" type="number" min="0" step="1">
+<label>Low Stock (Pieces)</label><input id="editLow" type="number" min="0" step="1">
+</div>
+<button class="btn" onclick="saveEdit()">Save Changes</button>
+<button class="btn gray" onclick="closeEdit()">Cancel</button>
+</div>
+</div>
+
+<script>
+const KEY="vaibhav_lakshmi_store_v5";
+let db={products:[],sales:[],purchases:[],expenses:[]};
+let cart=[];
+
+function el(id){return document.getElementById(id)}
+function money(n){return "₹"+(Number(n)||0).toFixed(2)}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function today(){let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function saveData(){localStorage.setItem(KEY,JSON.stringify(db))}
+function optional(v){return v===""?null:Number(v)}
+
+function loadData(){
+ try{
+  let raw=localStorage.getItem(KEY);
+  if(raw){db=JSON.parse(raw)}
+  else{
+   let old=localStorage.getItem("choudhary_grocery_v4")||localStorage.getItem("choudhary_grocery_v3");
+   if(old){
+    let d=JSON.parse(old);
+    db.products=(d.products||[]).map(p=>({
+     id:p.id||uid(),name:p.name||"Product",type:p.type||"piece",
+     stockBase:Number(p.stockBase??p.stock)||0,
+     cost:Number(p.cost)||0,price:Number(p.price)||0,
+     low:Number(p.low)||0,packPrices:p.packPrices||{}
+    }));
+    db.sales=(d.sales||[]).map(s=>({...s,
+     stockDeducted:Number(s.stockDeducted??s.qty)||0,
+     stockUnit:s.stockUnit||"pcs"
+    }));
+    db.purchases=d.purchases||[];
+    db.expenses=d.expenses||[];
+    saveData();
+   }
+  }
+ }catch(e){alert("Data load nahi ho paya. Backup se restore kar sakte hain.")}
+ db.products=Array.isArray(db.products)?db.products:[];
+ db.sales=Array.isArray(db.sales)?db.sales:[];
+ db.purchases=Array.isArray(db.purchases)?db.purchases:[];
+ db.expenses=Array.isArray(db.expenses)?db.expenses:[];
+}
+
+function showPage(id,btn){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ el(id).classList.add("active");
+ document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ renderAll();
+}
+
+function toggleProductType(){
+ let w=el("pType").value==="weight";
+ el("weightFields").classList.toggle("hidden",!w);
+ el("pieceFields").classList.toggle("hidden",w);
+}
+function toggleEditType(){
+ let w=el("editType").value==="weight";
+ el("editWeight").classList.toggle("hidden",!w);
+ el("editPiece").classList.toggle("hidden",w);
+}
+
+function addProduct(){
+ let name=el("pName").value.trim(),type=el("pType").value;
+ if(!name)return alert("Product name enter karein.");
+ let p={id:uid(),name,type,low:Number(el("pLow").value)||0,packPrices:{}};
+ if(type==="weight"){
+  p.cost=Number(el("pCostKg").value)||0;p.price=Number(el("pPriceKg").value)||0;
+  p.stockBase=Math.round((Number(el("pStockKg").value)||0)*1000);
+  p.packPrices={250:optional(el("p250").value),500:optional(el("p500").value),1000:optional(el("p1000").value)};
+ }else{
+  p.cost=Number(el("pCost").value)||0;p.price=Number(el("pPrice").value)||0;
+  p.stockBase=Math.floor(Number(el("pStock").value)||0);
+ }
+ db.products.push(p);saveData();
+ ["pName","pCostKg","pPriceKg","pStockKg","p250","p500","p1000","pCost","pPrice","pStock"].forEach(id=>el(id).value="");
+ el("pLow").value=2;renderAll();alert("Product saved!");
+}
+function stockText(p){
+ return p.type==="weight"?(p.stockBase/1000).toFixed(3).replace(/\.?0+$/,"")+" kg":p.stockBase+" pcs";
+}
+function renderProducts(){
+ let q=(el("productSearch").value||"").toLowerCase();
+ let a=db.products.filter(p=>p.name.toLowerCase().includes(q));
+ el("productTable").innerHTML=a.length?`<table><tr><th>Product</th><th>Type</th><th>Stock</th><th>Price</th><th>Action</th></tr>`+
+ a.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.type}</td><td>${stockText(p)}</td><td>${p.type==="weight"?money(p.price)+"/kg":money(p.price)+"/pc"}</td><td><button class="btn small blue" onclick="openEdit('${p.id}')">Edit</button><button class="btn small red" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>`).join("")+"</table>":"No products.";
+}
+function openEdit(id){
+ let p=db.products.find(x=>x.id===id);if(!p)return;
+ el("editId").value=id;el("editName").value=p.name;el("editType").value=p.type;
+ if(p.type==="weight"){
+  el("editCostKg").value=p.cost;el("editPriceKg").value=p.price;
+  el("edit250").value=p.packPrices?.[250]??"";
+  el("edit500").value=p.packPrices?.[500]??"";
+  el("edit1000").value=p.packPrices?.[1000]??"";
+  el("editStockKg").value=p.stockBase/1000;el("editLowKg").value=p.low;
+ }else{
+  el("editCost").value=p.cost;el("editPrice").value=p.price;
+  el("editStock").value=p.stockBase;el("editLow").value=p.low;
+ }
+ toggleEditType();el("editModal").classList.add("show");
+}
+function closeEdit(){el("editModal").classList.remove("show")}
+function saveEdit(){
+ let p=db.products.find(x=>x.id===el("editId").value);if(!p)return;
+ let type=el("editType").value;
+ if(type!==p.type&&p.stockBase>0){
+  if(!confirm("Type change karne par existing stock zero ho jayega. Continue?"))return;
+  p.stockBase=0;
+ }
+ p.name=el("editName").value.trim();if(!p.name)return alert("Name required.");
+ p.type=type;
+ if(type==="weight"){
+  p.cost=Number(el("editCostKg").value)||0;p.price=Number(el("editPriceKg").value)||0;
+  p.packPrices={250:optional(el("edit250").value),500:optional(el("edit500").value),1000:optional(el("edit1000").value)};
+  p.stockBase=Math.round((Number(el("editStockKg").value)||0)*1000);p.low=Number(el("editLowKg").value)||0;
+ }else{
+  p.cost=Number(el("editCost").value)||0;p.price=Number(el("editPrice").value)||0;
+  p.stockBase=Math.floor(Number(el("editStock").value)||0);p.low=Number(el("editLow").value)||0;
+ }
+ saveData();closeEdit();renderAll();alert("Product updated.");
+}
+function deleteProduct(id){
+ if(!confirm("Product delete karna hai?"))return;
+ db.products=db.products.filter(p=>p.id!==id);saveData();renderAll();
+}
+
+/* QUICK SALE */
+function renderSaleProducts(){
+ let q=(el("saleSearch").value||"").toLowerCase();
+ let a=db.products.filter(p=>p.name.toLowerCase().includes(q));
+ el("saleProducts").innerHTML=a.map(p=>`
+ <div class="product-card">
+ <h3>${esc(p.name)}</h3>
+ <div class="muted">Stock: ${stockText(p)}</div>
+ <p><b>${p.type==="weight"?money(p.price)+"/kg":money(p.price)+"/piece"}</b></p>
+ <button class="btn" onclick="showWeightOptions('${p.id}')">Add to Cart</button>
+ <div id="weightOptions_${p.id}" class="hidden">
+ ${p.type==="weight"?`
+ <div class="grid" style="margin-top:10px">
+ <button class="btn blue" onclick="addQuickWeight('${p.id}',250)">250g</button>
+ <button class="btn blue" onclick="addQuickWeight('${p.id}',500)">500g</button>
+ <button class="btn blue" onclick="addQuickWeight('${p.id}',1000)">1 KG</button>
+ <button class="btn orange" onclick="customQuickWeight('${p.id}')">Custom</button>
+ </div>`:
+ `<button class="btn blue" onclick="addQuickPiece('${p.id}')">Add 1 Piece</button>`}
+ </div>
+ </div>`).join("")||"No products found.";
+}
+function showWeightOptions(id){
+ let p=db.products.find(x=>x.id===id);if(!p)return;
+ if(p.type==="piece"){addQuickPiece(id);return}
+ el("weightOptions_"+id).classList.toggle("hidden");
+}
+function addQuickWeight(id,grams){
+ let p=db.products.find(x=>x.id===id);if(!p)return;
+ let special=p.packPrices?.[grams];
+ let price=special!==null&&special!==undefined?Number(special):p.price*grams/1000;
+ addCartLine(p,{unit:"g",base:grams,label:grams>=1000?(grams/1000)+" kg":grams+" g",packs:1,price,gramsPerPack:grams});
+}
+function customQuickWeight(id){
+ let p=db.products.find(x=>x.id===id);if(!p)return;
+ let amount=prompt("Custom weight enter karein. Example: 2");
+ if(amount===null)return;
+ amount=Number(amount);
+ if(!Number.isFinite(amount)||amount<=0)return alert("Valid weight enter karein.");
+ let unit=prompt("Unit enter karein: g ya kg","kg");
+ if(unit===null)return;
+ unit=unit.toLowerCase().trim();
+ if(unit!=="g"&&unit!=="kg")return alert("Sirf g ya kg enter karein.");
+ let grams=Math.round(amount*(unit==="kg"?1000:1));
+ if(grams<=0)return alert("Invalid weight.");
+ addCartLine(p,{unit:"g",base:grams,label:amount+" "+unit,packs:1,price:p.price*grams/1000,gramsPerPack:grams});
+}
+function addQuickPiece(id){
+ let p=db.products.find(x=>x.id===id);if(!p)return;
+ addCartLine(p,{unit:"pcs",base:1,label:"1 piece",packs:1,price:p.price});
+}
+function addCartLine(p,item){
+ let already=cart.reduce((s,c)=>s+(c.pid===p.id?c.base:0),0);
+ if(item.base>p.stockBase-already)return alert("Available stock insufficient hai.");
+ let existing=cart.find(c=>c.pid===p.id&&c.unit===item.unit&&c.label===item.label&&c.price===item.price);
+ if(existing){existing.packs+=1;existing.base+=item.base}
+ else cart.push({pid:p.id,name:p.name,...item});
+ renderCart();
+}
+function renderCart(){
+ if(!cart.length){el("cartItems").innerHTML="Cart is empty.";el("cartTotal").textContent=money(0);return}
+ el("cartItems").innerHTML=cart.map((c,i)=>`
+ <div class="cart-line">
+ <div><b>${esc(c.name)}</b><br><span class="muted">${esc(c.label)} × ${c.packs} | ${money(c.price)} each</span></div>
+ <div class="qty">
+ <button onclick="changeCart(${i},-1)">−</button>
+ <b>${c.packs}</b>
+ <button onclick="changeCart(${i},1)">+</button>
+ <button class="btn red small" onclick="removeCart(${i})">×</button>
+ </div>
+ <b>${money(c.price*c.packs)}</b>
+ </div>`).join("");
+ el("cartTotal").textContent=money(cart.reduce((s,c)=>s+c.price*c.packs,0));
+}
+function changeCart(i,d){
+ let c=cart[i],p=db.products.find(x=>x.id===c.pid);
+ let n=c.packs+d;
+ if(n<=0){cart.splice(i,1);renderCart();return}
+ let base=c.unit==="g"?c.gramsPerPack*n:n;
+ let other=cart.reduce((s,x,j)=>s+(j!==i&&x.pid===c.pid?x.base:0),0);
+ if(base+other>p.stockBase)return alert("Stock available nahi hai.");
+ c.packs=n;c.base=base;renderCart();
+}
+function removeCart(i){cart.splice(i,1);renderCart()}
+function clearCart(){cart=[];renderCart()}
+
+/* CUSTOMER DETAILS AND CREDIT */
+function toggleCredit(){
+ let isCredit=el("payment").value==="Credit";
+ el("creditBox").classList.toggle("hidden",!isCredit);
+ el("optionalCustomerBox").classList.toggle("hidden",isCredit);
+ el("customerName").required=isCredit;
+ el("customerMobile").required=isCredit;
+ el("customerAddress").required=isCredit;
+}
+function addDays(date,days){
+ let d=new Date(date);
+ d.setDate(d.getDate()+days);
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function completeSale(){
+ if(!cart.length)return alert("Cart empty hai.");
+
+ let isCredit=el("payment").value==="Credit";
+ let name=isCredit?el("customerName").value.trim():el("optionalCustomerName").value.trim();
+ let mobile=isCredit?el("customerMobile").value.trim():el("optionalCustomerMobile").value.trim();
+ let address=isCredit?el("customerAddress").value.trim():el("optionalCustomerAddress").value.trim();
+
+ if(isCredit){
+  if(!name||!mobile||!address)return alert("Credit sale ke liye Customer Name, Mobile Number aur Address teeno bharna zaroori hai.");
+ }
+
+ for(let c of cart){
+  let p=db.products.find(x=>x.id===c.pid);
+  if(!p||p.stockBase<c.base)return alert(c.name+" ka stock insufficient hai.");
+ }
+
+ let bill="BILL-"+Date.now().toString().slice(-8);
+ let saleDate=new Date().toISOString();
+ let dueDate=isCredit?addDays(saleDate,30):null;
+
+ cart.forEach(c=>{
+  let p=db.products.find(x=>x.id===c.pid);
+  let cost=p.cost*(p.type==="weight"?c.base/1000:c.base);
+  let amount=c.price*c.packs;
+  p.stockBase-=c.base;
+
+  db.sales.push({
+   id:uid(),bill,date:saleDate,pid:p.id,product:p.name,
+   qty:c.unit==="g"?c.base/1000:c.base,
+   stockDeducted:c.base,
+   stockUnit:c.unit,
+   weightLabel:c.unit==="g"?c.label+" × "+c.packs:c.label+" × "+c.packs,
+   packs:c.packs,price:c.price,cost,amount,profit:amount-cost,
+   payment:el("payment").value,
+   customer:name,mobile,address,
+   dueDate:dueDate,
+   creditStatus:isCredit?"Pending":null
+  });
+ });
+
+ saveData();
+ clearCart();
+ ["customerName","customerMobile","customerAddress","optionalCustomerName","optionalCustomerMobile","optionalCustomerAddress"].forEach(id=>el(id).value="");
+ el("payment").value="Cash";
+ toggleCredit();
+ renderAll();
+ alert("Sale saved successfully! Bill: "+bill+(isCredit?"\nPayment due date: "+dueDate:""));
+}
+
+/* CREDIT RECORDS */
+function getCreditBills(){
+ let groups={};
+ db.sales.filter(s=>s.payment==="Credit").forEach(s=>{
+  let key=s.bill||s.id;
+  if(!groups[key]){
+   let saleDate=s.date||new Date().toISOString();
+   groups[key]={
+    bill:key,customer:s.customer||"",mobile:s.mobile||"",
+    address:s.address||"",date:saleDate,
+    dueDate:s.dueDate||addDays(saleDate,30),
+    amount:0,lines:[],status:"Pending"
+   };
+  }
+  groups[key].amount+=Number(s.amount)||0;
+  groups[key].lines.push(s);
+ });
+ return Object.values(groups).map(b=>{
+  b.status=b.lines.every(s=>s.creditStatus==="Paid")?"Paid":"Pending";
+  b.overdue=b.status==="Pending"&&b.dueDate<today();
+  return b;
+ }).sort((a,b)=>b.date.localeCompare(a.date));
+}
+function markCreditPaid(bill){
+ if(!confirm("Is credit bill ki payment receive ho gayi hai?"))return;
+ db.sales.forEach(s=>{
+  if((s.bill||s.id)===bill&&s.payment==="Credit"){
+   s.creditStatus="Paid";
+   s.paidDate=new Date().toISOString();
+  }
+ });
+ saveData();renderAll();alert("Payment marked as Paid.");
+}
+function renderCredits(){
+ let bills=getCreditBills();
+ let pending=bills.filter(b=>b.status==="Pending");
+ let overdue=pending.filter(b=>b.overdue);
+ let pendingTotal=pending.reduce((n,b)=>n+b.amount,0);
+ let overdueTotal=overdue.reduce((n,b)=>n+b.amount,0);
+
+ el("creditPendingTotal").textContent=money(pendingTotal);
+ el("creditOverdueTotal").textContent=money(overdueTotal);
+ el("creditPendingCount").textContent=pending.length;
+ el("creditOverdueCount").textContent=overdue.length;
+ el("dashPending").textContent=money(pendingTotal);
+ el("dashOverdue").textContent=money(overdueTotal);
+
+ el("creditSummary").innerHTML=overdue.length?
+ `<div class="alert"><b>⚠️ Overdue Payment Alert!</b><br>${overdue.length} bill(s) ka payment 30 days ke baad bhi pending hai.<br>Total overdue: <b>${money(overdueTotal)}</b></div>`:
+ pending.length?
+ `<div class="notice">${pending.length} credit bill(s) ka payment pending hai. Total: <b>${money(pendingTotal)}</b></div>`:
+ `<div class="success">All credit payments clear hain. Koi pending payment nahi.</div>`;
+
+ el("creditTable").innerHTML=pending.length?
+ `<table><tr><th>Customer</th><th>Mobile</th><th>Address</th><th>Bill</th><th>Sale Date</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Action</th></tr>`+
+ pending.map(b=>`<tr>
+ <td>${esc(b.customer)}</td>
+ <td>${esc(b.mobile)}</td>
+ <td>${esc(b.address)}</td>
+ <td>${esc(b.bill)}</td>
+ <td>${new Date(b.date).toLocaleDateString()}</td>
+ <td>${esc(b.dueDate)}</td>
+ <td><b>${money(b.amount)}</b></td>
+ <td>${b.overdue?'<span style="color:#d93645;font-weight:bold">OVERDUE</span>':'<span style="color:#d88719;font-weight:bold">PENDING</span>'}</td>
+ <td><button class="btn small" onclick="markCreditPaid('${esc(b.bill)}')">Mark as Paid</button></td>
+ </tr>`).join("")+"</table>":
+ "No pending credit payments.";
+}
+
+/* SALES */
+function renderSales(){
+ let q=(el("salesSearch").value||"").toLowerCase(),from=el("salesFrom").value,to=el("salesTo").value;
+ let a=db.sales.filter(s=>{
+  let d=s.date.slice(0,10);
+  return(!from||d>=from)&&(!to||d<=to)&&
+  ((s.product||"").toLowerCase().includes(q)||(s.customer||"").toLowerCase().includes(q)||(s.mobile||"").toLowerCase().includes(q)||(s.bill||"").toLowerCase().includes(q));
+ }).slice().reverse();
+ el("salesTable").innerHTML=a.length?`<table><tr><th>Date</th><th>Bill</th><th>Product</th><th>Quantity</th><th>Amount</th><th>Profit</th><th>Payment</th><th>Customer</th><th>Action</th></tr>`+
+ a.map(s=>`<tr><td>${new Date(s.date).toLocaleString()}</td><td>${esc(s.bill||"-")}</td><td>${esc(s.product)}</td><td>${esc(s.weightLabel||s.qty)}</td><td>${money(s.amount)}</td><td>${money(s.profit)}</td><td>${esc(s.payment)}</td><td>${esc(s.customer||"-")}</td><td><button class="btn red small" onclick="deleteSale('${s.id}')">Delete</button></td></tr>`).join("")+"</table>":"No sales found.";
+}
+function clearSalesFilter(){el("salesFrom").value="";el("salesTo").value="";el("salesSearch").value="";renderSales()}
+function deleteSale(id){
+ let s=db.sales.find(x=>x.id===id);if(!s)return;
+ if(!confirm("Sale delete karna hai? Stock restore hoga."))return;
+ let p=db.products.find(x=>x.id===s.pid);
+ if(p)p.stockBase+=Number(s.stockDeducted??s.qty)||0;
+ db.sales=db.sales.filter(x=>x.id!==id);
+ saveData();renderAll();
+}
+
+/* PURCHASES */
+function purchaseProductChanged(){
+ let p=db.products.find(x=>x.id===el("purchaseProduct").value);
+ el("purchaseWeight").classList.toggle("hidden",!p||p.type!=="weight");
+ el("purchasePiece").classList.toggle("hidden",!p||p.type!=="piece");
+}
+function savePurchase(){
+ let p=db.products.find(x=>x.id===el("purchaseProduct").value);
+ if(!p)return alert("Product select karein.");
+ let base,qty,unit;
+ if(p.type==="weight"){
+  qty=Number(el("purchaseQty").value);unit=el("purchaseUnit").value;
+  if(!Number.isFinite(qty)||qty<=0)return alert("Valid weight enter karein.");
+  base=Math.round(qty*(unit==="kg"?1000:1));
+ }else{
+  qty=Math.floor(Number(el("purchasePieces").value));unit="pcs";
+  if(!Number.isInteger(qty)||qty<=0)return alert("Valid pieces enter karein.");
+  base=qty;
+ }
+ let total=Number(el("purchaseCost").value);
+ if(!Number.isFinite(total)||total<0)return alert("Valid purchase cost enter karein.");
+ let old=p.stockBase;
+ p.cost=(old*p.cost+total)/(old+base);
+ p.stockBase+=base;
+ db.purchases.push({id:uid(),date:new Date().toISOString(),pid:p.id,product:p.name,qty,unit,base,total});
+ saveData();el("purchaseQty").value="";el("purchasePieces").value="";el("purchaseCost").value="";
+ renderAll();alert("Purchase saved. Stock updated.");
+}
+
+/* EXPENSES AND REPORTS */
+function addExpense(){
+ let name=el("expenseName").value.trim(),amount=Number(el("expenseAmount").value);
+ if(!name||!Number.isFinite(amount)||amount<=0)return alert("Valid expense details enter karein.");
+ db.expenses.push({id:uid(),name,amount,date:new Date().toISOString()});
+ saveData();el("expenseName").value="";el("expenseAmount").value="";renderAll();alert("Expense saved.");
+}
+function renderDashboard(){
+ let t=today(),a=db.sales.filter(s=>s.date.slice(0,10)===t);
+ let sum=(arr,k)=>arr.reduce((n,x)=>n+(Number(x[k])||0),0);
+ el("todaySales").textContent=money(sum(a,"amount"));
+ el("totalSales").textContent=money(sum(db.sales,"amount"));
+ el("todayProfit").textContent=money(sum(a,"profit"));
+ el("productCount").textContent=db.products.length;
+ let low=db.products.filter(p=>p.stockBase<=p.low*(p.type==="weight"?1000:1));
+ el("lowCount").textContent=low.length;
+ el("lowStockList").innerHTML=low.length?low.map(p=>`<p style="color:#c22">${esc(p.name)} — ${stockText(p)}</p>`).join(""):"No low stock.";
+ let recent=db.sales.slice(-6).reverse();
+ el("recentSales").innerHTML=recent.length?`<table><tr><th>Date</th><th>Product</th><th>Quantity</th><th>Amount</th></tr>`+
+ recent.map(s=>`<tr><td>${new Date(s.date).toLocaleDateString()}</td><td>${esc(s.product)}</td><td>${esc(s.weightLabel||s.qty)}</td><td>${money(s.amount)}</td></tr>`).join("")+"</table>":"No sales yet.";
+}
+function renderPurchaseHistory(){
+ el("purchaseTable").innerHTML=db.purchases.length?`<table><tr><th>Date</th><th>Product</th><th>Quantity</th><th>Cost</th></tr>`+
+ db.purchases.slice().reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString()}</td><td>${esc(x.product)}</td><td>${x.qty} ${x.unit}</td><td>${money(x.total)}</td></tr>`).join("")+"</table>":"No purchases.";
+}
+function renderExpenseHistory(){
+ el("expenseTable").innerHTML=db.expenses.length?`<table><tr><th>Date</th><th>Expense</th><th>Amount</th></tr>`+
+ db.expenses.slice().reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString()}</td><td>${esc(x.name)}</td><td>${money(x.amount)}</td></tr>`).join("")+"</table>":"No expenses.";
+}
+function renderReports(){
+ let m=el("reportMonth").value||today().slice(0,7);
+ let a=db.sales.filter(s=>s.date.slice(0,7)===m);
+ let e=db.expenses.filter(x=>x.date.slice(0,7)===m);
+ let sales=a.reduce((n,x)=>n+(Number(x.amount)||0),0);
+ let cost=a.reduce((n,x)=>n+(Number(x.cost)||0),0);
+ let gross=a.reduce((n,x)=>n+(Number(x.profit)||0),0);
+ let expenses=e.reduce((n,x)=>n+(Number(x.amount)||0),0);
+ el("rSales").textContent=money(sales);el("rCost").textContent=money(cost);
+ el("rGross").textContent=money(gross);el("rExpense").textContent=money(expenses);
+ el("rNet").textContent=money(gross-expenses);
+}
+function renderAll(){
+ renderDashboard();renderProducts();renderSaleProducts();renderCart();
+ renderSales();renderCredits();renderPurchaseHistory();renderExpenseHistory();renderReports();
+ el("purchaseProduct").innerHTML=db.products.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.type})</option>`).join("");
+ purchaseProductChanged();
+}
+
+/* BACKUP */
+function downloadBlob(blob,name){
+ let url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadBackup(){
+ downloadBlob(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),"vaibhav-lakshmi-backup-"+today()+".json");
+}
+function restoreBackup(){
+ let file=el("restoreFile").files[0];if(!file)return alert("Backup file select karein.");
+ if(!confirm("Current data replace ho jayega. Continue?"))return;
+ let r=new FileReader();
+ r.onload=()=>{
+  try{
+   let x=JSON.parse(r.result);
+   if(!Array.isArray(x.products)||!Array.isArray(x.sales))throw Error();
+   db={products:x.products,sales:x.sales,purchases:x.purchases||[],expenses:x.expenses||[]};
+   saveData();renderAll();alert("Backup restored.");
+  }catch(e){alert("Invalid backup file.")}
+ };
+ r.readAsText(file);
+}
+function exportSales(){
+ let rows=[["Date","Bill","Product","Quantity","Amount","Cost","Profit","Payment","Customer","Mobile","Address","Due Date","Credit Status"]];
+ db.sales.forEach(s=>rows.push([s.date,s.bill,s.product,s.weightLabel||s.qty,s.amount,s.cost,s.profit,s.payment,s.customer,s.mobile,s.address,s.dueDate,s.creditStatus]));
+ let csv=rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\n");
+ downloadBlob(new Blob([csv],{type:"text/csv"}),"store-sales-"+today()+".csv");
+}
+
+loadData();
+el("reportMonth").value=today().slice(0,7);
+toggleCredit();
+renderAll();
+</script>
+</body>
+</html>
